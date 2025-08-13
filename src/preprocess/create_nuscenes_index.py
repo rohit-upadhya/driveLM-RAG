@@ -13,7 +13,7 @@ class CreateNuscenesIndex:
     def _read_json(
         self,
         file_name: str,
-    ) -> dict | list:
+    ) -> list[dict]:
         try:
             with open(file_name, "r") as file:
                 data = json.load(file)
@@ -27,6 +27,7 @@ class CreateNuscenesIndex:
         file: str,
     ) -> str:
         return os.path.join(self.root_folder, f"{file}.json")
+        pass
 
     def _process_sample(
         self,
@@ -35,16 +36,18 @@ class CreateNuscenesIndex:
         ego_pose: list,
         category: list,
         sample_annotation: list,
+        instance: list,
     ) -> list[dict]:
         sample_data_by_sample = {}
+        sample_data_by_token = {}
         for sd in sample_data:
             if sd.get("fileformat") == "jpg":
                 sample_data_by_sample[sd["sample_token"]] = sd
+                sample_data_by_token[sd["token"]] = sd
         final_sample_data = []
         ego_by_token = {e["token"]: e for e in ego_pose}
-        sample_by_token = {s["token"]: s for s in samples}
         category_by_token = {c["token"]: c for c in category}
-        # sample_annotation_by_token = {sa["token"]: sa for sa in sample_annotation}
+        instance_by_token = {i["token"]: i for i in instance}
         sample_annotation_by_sample = {}
         for item in sample_annotation:
             sample_token = item["sample_token"]
@@ -76,41 +79,48 @@ class CreateNuscenesIndex:
                 if ego_pose_point
                 else [None, None, None, None]
             )
-            speed = None
-            prev_token = sample_data_point.get("prev", None)
             sample_token_point = sample_annotation_by_sample.get(sample["token"])
             objects = {}
             if sample_token_point:
                 for sample_token_obj in sample_token_point:
-                    pass
-            if prev_token and prev_token in sample_by_token:
-                previous_sample_data = sample_data_by_sample.get(prev_token, None)
-                if previous_sample_data:
-                    ego_pose_point_previous = ego_by_token.get(
-                        previous_sample_data.get("ego_pose_token", None)
+                    instance_ = instance_by_token.get(
+                        sample_token_obj["instance_token"], None
                     )
-                    if ego_pose_point and ego_pose_point_previous:
+                    if instance_:
+                        category_ = category_by_token.get(
+                            instance_["category_token"], None
+                        )
+                        if category_:
+                            category_name = category_.get("name")
+                            if category_name not in objects:
+                                objects[category_name] = 1
+                            else:
+                                objects[category_name] += 1
+            speed = None
+            prev_sd_token = sample_data_point.get("prev")
+            if prev_sd_token:
+                prev_sd = sample_data_by_token.get(prev_sd_token)
+                if prev_sd:
+                    ego_pose_prev = ego_by_token.get(prev_sd.get("ego_pose_token"))
+                    if ego_pose_point and ego_pose_prev:
                         translation_curr = ego_pose_point.get(
                             "translation", translation
                         )
-                        translation_prev = ego_pose_point_previous.get(
-                            "translation", translation
-                        )
-                        timestamp_curr = ego_pose_point.get("timestamp")
-                        timestamp_prev = ego_pose_point_previous.get("timestamp")
+                        translation_prev = ego_pose_prev.get("translation", translation)
+                        t_curr = ego_pose_point.get("timestamp")
+                        t_prev = ego_pose_prev.get("timestamp")
                         if (
                             None not in translation_curr
                             and None not in translation_prev
-                            and timestamp_curr
-                            and timestamp_prev
+                            and t_curr is not None
+                            and t_prev is not None
                         ):
-                            delta_time = (timestamp_curr - timestamp_prev) / 1e6
-                            if delta_time > 0:
+                            dt = (t_curr - t_prev) / 1e6
+                            if dt > 0:
                                 speed = (
                                     calculate_l_2(translation_curr, translation_prev)
-                                    / delta_time
+                                    / dt
                                 )
-
             final_dict = {
                 "sample_token": sample.get("token", None),
                 "scene_token": sample.get("scene_token", None),
@@ -131,25 +141,29 @@ class CreateNuscenesIndex:
                     "rotation_xyzw": rotation_xyzw,
                     "speed_mps": speed,
                 },
-                "objects": {
-                    "car": 4,
-                    "truck": 1,
-                    "bus": 0,
-                    "motorcycle": 0,
-                    "bicycle": 1,
-                    "pedestrian": 3,
-                    "cone": 2,
-                    "barrier": 0,
-                    "other_vehicle": 0,
-                },
+                "objects": objects,
             }
 
             final_sample_data.append(final_dict)
         return final_sample_data
 
+    def _save_json_files(
+        self,
+        data: list | dict,
+        file_name: str,
+    ) -> None:
+        os.makedirs(os.path.dirname(file_name), exist_ok=True)
+        with open(file_name, "w+") as file:
+            json.dump(
+                data,
+                file,
+                ensure_ascii=False,
+                indent=4,
+            )
+
     def create_index(
         self,
-    ):
+    ) -> list:
         sample_list = self._read_json(
             file_name=self._process_file_name(file="sample"),
         )
@@ -159,15 +173,29 @@ class CreateNuscenesIndex:
         ego_pose_list = self._read_json(
             file_name=self._process_file_name(file="ego_pose"),
         )
-        sensor_meta_list = self._read_json(
-            file_name=self._process_file_name(file="sensor"),
-        )
         category_list = self._read_json(
             file_name=self._process_file_name(file="category"),
         )
-        scene_list = self._read_json(
-            file_name=self._process_file_name(file="scene"),
+        sample_annotation_list = self._read_json(
+            file_name=self._process_file_name(file="sample_annotation"),
         )
+        instance_list = self._read_json(
+            file_name=self._process_file_name(file="instance"),
+        )
+        final_processed_samples = self._process_sample(
+            samples=sample_list,
+            sample_data=sample_data_list,
+            ego_pose=ego_pose_list,
+            category=category_list,
+            sample_annotation=sample_annotation_list,
+            instance=instance_list,
+        )
+        print(final_processed_samples[0])
+        self._save_json_files(
+            data=final_processed_samples,
+            file_name="resources/output/nusciences_processed.json",
+        )
+        return final_processed_samples
 
 
 if __name__ == "__main__":
