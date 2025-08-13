@@ -27,7 +27,6 @@ class CreateNuscenesIndex:
         file: str,
     ) -> str:
         return os.path.join(self.root_folder, f"{file}.json")
-        pass
 
     def _process_sample(
         self,
