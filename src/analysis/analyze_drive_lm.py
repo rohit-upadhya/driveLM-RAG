@@ -13,26 +13,48 @@ class DriveLMAnalysis:
     def process_analysis(
         self,
     ):
-        question_count = {}
+        all_question_count = {}
+        per_scene_question_count = {}
         for k_1, v_1 in self.train_dict.items():
+            per_scene_question_count[k_1] = {}
             key_frame = v_1.get("key_frames", {})
             for k_2, v_2 in key_frame.items():
-                question_count[k_2] = {}
+                all_question_count[k_2] = {}
                 questions = v_2.get("QA", {})
                 for k_3, v_3 in questions.items():
-                    if k_3 not in question_count[k_2]:
-                        question_count[k_2][k_3] = len(v_3)
+                    if k_3 not in all_question_count[k_2]:
+                        all_question_count[k_2][k_3] = len(v_3)
+                    if k_3 not in per_scene_question_count[k_1]:
+                        per_scene_question_count[k_1][k_3] = len(v_3)
+                    else:
+                        per_scene_question_count[k_1][k_3] += len(v_3)
+        question_types = ["perception", "prediction", "planning", "behavior"]
 
-        return question_count
+        for item in question_types:
+            for k_all, v_all in all_question_count.items():
+                if item not in v_all:
+                    print(f"No {item} type question in {k_all}")
+                    v_all[item] = 0
+            for k_scene, v_scene in per_scene_question_count.items():
+                if item not in v_scene:
+                    print(f"No {item} type question in {k_scene}")
+                    v_scene[item] = 0
+        return all_question_count, per_scene_question_count
 
     def plot_list_distribution(
         self,
         values: list,
         title: str,
-    ) -> tuple:
+        min_: int,
+        max_: int,
+    ) -> None:
+        if not min_:
+            min_ = int(values.min())
+        if not max_:
+            max_ = int(values.max())
         if not values:
             print("Empty list provided. Skipping plot.")
-            return None, None
+            return
 
         values = np.array(values)
         mean_val = np.mean(values)
@@ -40,7 +62,7 @@ class DriveLMAnalysis:
         plt.figure(figsize=(6, 4))
         plt.hist(
             values,
-            bins=range(int(values.min()) - 5, int(values.max()) + 5),
+            bins=range(min_ - 5, max_ + 5),
             alpha=0.7,
             edgecolor="black",
         )
@@ -66,7 +88,6 @@ class DriveLMAnalysis:
         plt.legend()
         plt.tight_layout()
         plt.show()
-        return mean_val, median_val
 
     def plot_total(
         self,
@@ -100,6 +121,20 @@ class DriveLMAnalysis:
         plt.tight_layout()
         plt.show()
 
+    @staticmethod
+    def find_min_max_value(
+        arrays: list[list],
+    ):
+        if not arrays or all(not arr for arr in arrays):
+            return None, None
+
+        flattened = [val for arr in arrays for val in arr if val is not None]
+
+        if not flattened:
+            return None, None
+
+        return min(flattened), max(flattened)
+
 
 if __name__ == "__main__":
 
@@ -114,10 +149,12 @@ if __name__ == "__main__":
             print(f"Error {e} discovered. Issue Parsing json - {file_name}")
             raise
 
-    train_file = "resources/data/drivelm/v1_1_train_nus.json"
+    train_file = "resources/data/drivelm/samples/v1_1_train_nus.json"
     drive_analysis = DriveLMAnalysis(train_dict=read_json(train_file))
 
-    questions = drive_analysis.process_analysis()
+    questions, per_scene_questions = drive_analysis.process_analysis()
 
     with open("resources/output/lm_analysis_qustion.json", "w+") as file:
         json.dump(questions, file, ensure_ascii=False, indent=4)
+    with open("resources/output/per_scene_lm_analysis_qustion.json", "w+") as file:
+        json.dump(per_scene_questions, file, ensure_ascii=False, indent=4)
