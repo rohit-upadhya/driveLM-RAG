@@ -1,6 +1,10 @@
+import os
+import re
 import json
+import random
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 
 
 class DriveLMAnalysis:
@@ -41,6 +45,159 @@ class DriveLMAnalysis:
                     v_scene[item] = 0
         return all_question_count, per_scene_question_count
 
+    def _draw_label(
+        self,
+        draw,
+        xy,
+        text,
+        font,
+    ):
+        x1, y1 = xy
+        bbox = draw.textbbox((x1, y1), text, font=font)
+        pad = 2
+        bg = (0, 0, 0)
+        fg = (255, 255, 255)
+        draw.rectangle(
+            [bbox[0] - pad, bbox[1] - pad, bbox[2] + pad, bbox[3] + pad], fill=bg
+        )
+        draw.text((x1, y1), text, fill=fg, font=font)
+
+    def _clamp_box(
+        self,
+        box,
+        w,
+        h,
+    ):
+        x1, y1, x2, y2 = box
+        x1 = max(0, min(int(round(x1)), w - 1))
+        y1 = max(0, min(int(round(y1)), h - 1))
+        x2 = max(0, min(int(round(x2)), w - 1))
+        y2 = max(0, min(int(round(y2)), h - 1))
+        if x2 < x1:
+            x1, x2 = x2, x1
+        if y2 < y1:
+            y1, y2 = y2, y1
+        return [x1, y1, x2, y2]
+
+    def _collect_boxes_by_camera(
+        self,
+        key_object_infos: dict,
+        image_paths: dict,
+    ):
+        cam_images = {}
+        for cam, path in image_paths.items():
+            try:
+                img = Image.open(path).convert("RGB")
+                cam_images[cam] = {"image": img, "boxes": []}
+            except Exception as e:
+                continue
+
+        font = ImageFont.load_default()
+        for tag, info in key_object_infos.items():
+            meta = self._parse_object_tag(tag=tag)
+            if not meta:
+                continue
+            cam = meta["camera"]
+            if cam not in cam_images:
+                continue
+            bbox = info.get("2d_bbox", None)
+            if not bbox or len(bbox) != 4:
+                continue
+
+            category = info.get("Category", "") or ""
+            status = info.get("Status", "") or ""
+            desc = info.get("Visual_description", "") or ""
+            label = f"{meta['id']} | {category}" + (f" ({status})" if status else "")
+
+            canvas = cam_images[cam]["image"]
+            draw = ImageDraw.Draw(canvas)
+            w, h = canvas.size
+            x1, y1, x2, y2 = self._clamp_box(bbox, w, h)
+
+            draw.rectangle([x1, y1, x2, y2], outline="red", width=3)
+            self._draw_label(draw, (x1, max(0, y1 - 18)), label, font)
+
+            cam_images[cam]["boxes"].append(
+                {
+                    "id": meta["id"],
+                    "bbox": [x1, y1, x2, y2],
+                    "category": category,
+                    "status": status,
+                    "desc": desc,
+                }
+            )
+
+        return cam_images
+
+    # def _detect_tag_in_string(
+    #     self,
+    #     query: str,
+    # ) -> tuple[bool, list[str]]:
+    #     pattern = r"<[^>]+>"
+    #     matches = re.findall(pattern, query)
+    #     parsed_tags = []
+    #     for tag in matches:
+    #         parsed = self._parse_object_tag(tag)
+    #         if parsed:
+    #             parsed_tags.append(parsed)
+    #     return (len(parsed_tags) > 0, parsed_tags)
+
+    # def _process_questions(
+    #     self,
+    #     qa: dict,
+    #     images: dict,
+    # ):
+    #     qa_with_tags = []
+    #     for question_type, questions in qa.items():
+    #         for item in questions:
+    #             tags_in_q = self._detect_tag_in_string(item["Q"])
+    #             tags_in_a = self._detect_tag_in_string(item["A"])
+    #             if tags_in_q[0]:
+    #                 for tag in tags_in_q:
+    #                 for item in images:
+    #                     if images["id"] ==
+    #             pass
+
+    def visualize_sample(
+        self,
+        scene_id: str | None = None,
+        key_frame_id: str | None = None,
+    ) -> dict | None:
+        if scene_id is None:
+            scene_id = random.choice(list(self.train_dict.keys()))
+        scene_ = self.train_dict.get(scene_id, {})
+        key_frames = scene_.get("key_frames", {})
+
+        if not key_frames:
+            print(f"No key_frames for scene {scene_id}")
+            return
+
+        if key_frame_id is None or key_frame_id not in key_frames:
+            key_frame_id = random.choice(list(key_frames.keys()))
+
+        kf = key_frames[key_frame_id]
+        key_object_infos = kf.get("key_object_infos", {})
+        image_paths = kf.get("image_paths", {})
+        qa = kf.get("QA", {})
+        cam_images = self._collect_boxes_by_camera(key_object_infos, image_paths)
+
+        return cam_images
+
+    def _parse_object_tag(
+        self,
+        tag: str,
+    ):
+        tag = tag.strip("<>")
+        parts = tag.split(",")
+        if len(parts) < 4:
+            return None
+        return {
+            "id": parts[0],
+            "camera": parts[1],
+            "cx": float(parts[2]),
+            "cy": float(parts[3]),
+        }
+
     def plot_list_distribution(
         self,
         values: list,
@@ -64,7 +221,6 @@ class DriveLMAnalysis:
             values,
             bins=range(min_ - 5, max_ + 5),
             alpha=0.7,
-            edgecolor="black",
         )
 
         plt.axvline(
