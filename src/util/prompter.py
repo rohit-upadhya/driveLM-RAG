@@ -5,12 +5,10 @@ class Prompter:
     def __init__(
         self,
         prompt_template: dict[Any, Any],
-        query: str,
-        images: list | None = None,
+        query_items: list[Any],
     ):
         self.prompt_template = prompt_template
-        self.query = query
-        self.images = images
+        self.query_items = query_items
         if not self.prompt_template:
             raise ValueError(
                 "Prompt template is not provided. Please provide a prompt template for further processing."
@@ -25,24 +23,22 @@ class Prompter:
             content = self.prompt_template.get("system_prompt", "")
             final_prompt.append({"role": "system", "content": content})
         content = []
-        if self.query:
-            content.append(
-                {
-                    "type": "input_text",
-                    "text": self.query,
-                }
-            )
-        else:
-            raise ValueError("No text provided. Please provide a query and try again.")
-        if self.images:
-
-            for image in self.images:
+        if self.query_items:
+            for item in self.query_items:
+                type = item["type"]
+                item_individual = item["item"]
                 content.append(
                     {
-                        "type": "input_image",
-                        "image_url": f"data:image/jpeg;base64,{image}",
-                    },
+                        "type": "input_text" if type == "text" else "input_image",
+                        "text": (
+                            item_individual
+                            if type == "text"
+                            else f"data:image/jpeg;base64,{item_individual}"
+                        ),
+                    }
                 )
+        else:
+            raise ValueError("No text provided. Please provide a query and try again.")
 
         final_prompt.append({"role": "user", "content": content})
         return final_prompt
