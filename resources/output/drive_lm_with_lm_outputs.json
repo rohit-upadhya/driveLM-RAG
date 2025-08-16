@@ -1,0 +1,152 @@
+{
+    "f0f120e4d4b0441da90ec53b16ee169d": {
+        "scene_description": "The ego vehicle proceeds through the intersection, continuing along the current roadway.",
+        "key_frames": {
+            "ffd1bdf020d145759224c629b501d2b2": {
+                "key_object_infos": {
+                    "<c1,CAM_BACK,991.7,603.0>": {
+                        "Category": "Vehicle",
+                        "Status": "Stationary",
+                        "Visual_description": "Champagne-colored sedan.",
+                        "2d_bbox": [
+                            769.2,
+                            409.7,
+                            1240.1,
+                            796.3
+                        ]
+                    },
+                    "<c2,CAM_FRONT,836.3,398.3>": {
+                        "Category": "Traffic element",
+                        "Status": null,
+                        "Visual_description": "Green light.",
+                        "2d_bbox": [
+                            710.5,
+                            303,
+                            976.8,
+                            493.6
+                        ]
+                    },
+                    "<c3,CAM_FRONT_LEFT,1075.5,382.8>": {
+                        "Category": "Traffic element",
+                        "Status": null,
+                        "Visual_description": "Red light.",
+                        "2d_bbox": [
+                            923.5,
+                            257.2,
+                            1245.2,
+                            508.4
+                        ]
+                    }
+                },
+                "QA": {
+                    "interesting": [
+                        {
+                            "Q": "What object should the ego vehicle notice first when the ego vehicle is getting to the next possible location? What is the state of the object that is first noticed by the ego vehicle and what action should the ego vehicle take? What object should the ego vehicle notice second when the ego vehicle is getting to the next possible location? What is the state of the object perceived by the ego vehicle as second and what action should the ego vehicle take? What object should the ego vehicle notice third? What is the state of the object perceived by the ego vehicle as third and what action should the ego vehicle take?",
+                            "A": "Firstly, notice <c3,CAM_FRONT_LEFT,1075.5,382.8>. The object is a traffic sign, so the ego vehicle should continue at the same speed. Secondly, notice <c2,CAM_FRONT,836.3,398.3>. The object is a traffic sign, so the ego vehicle should accelerate and continue ahead. Thirdly, notice <c1,CAM_BACK,991.7,603.0>. The object is stationary, so the ego vehicle should continue ahead at the same speed.",
+                            "C": null,
+                            "con_up": null,
+                            "con_down": null,
+                            "cluster": null,
+                            "layer": null,
+                            "generated_answer": "The ego vehicle should first notice the \"CAUTION HEAVY VEHICLES MOVEMENT\" sign. It is placed on the grassy area near the sidewalk, indicating potential heavy vehicle movement in the vicinity. The ego vehicle should proceed with caution and maintain a safe distance from the sign.\n\nSecondly, the ego vehicle should notice the \"STOP\" sign. It is located further down the road, indicating a mandatory stop at an intersection. The ego vehicle should come to a complete stop at the intersection.\n\nThirdly, the ego vehicle should notice the \"No Entry\" sign. It is positioned on the left side of the road, indicating that vehicles cannot enter the area. The ego vehicle should continue driving straight ahead without entering the restricted area."
+                        }
+                    ]
+                },
+                "image_paths": {
+                    "CAM_FRONT": "resources/data/drivelm/nuscenes/samples/CAM_FRONT/n008-2018-09-18-13-10-39-0400__CAM_FRONT__1537291002262404.jpg",
+                    "CAM_FRONT_LEFT": "resources/data/drivelm/nuscenes/samples/CAM_FRONT_LEFT/n008-2018-09-18-13-10-39-0400__CAM_FRONT_LEFT__1537291002254799.jpg",
+                    "CAM_FRONT_RIGHT": "resources/data/drivelm/nuscenes/samples/CAM_FRONT_RIGHT/n008-2018-09-18-13-10-39-0400__CAM_FRONT_RIGHT__1537291002270482.jpg",
+                    "CAM_BACK": "resources/data/drivelm/nuscenes/samples/CAM_BACK/n008-2018-09-18-13-10-39-0400__CAM_BACK__1537291002287558.jpg",
+                    "CAM_BACK_LEFT": "resources/data/drivelm/nuscenes/samples/CAM_BACK_LEFT/n008-2018-09-18-13-10-39-0400__CAM_BACK_LEFT__1537291002297405.jpg",
+                    "CAM_BACK_RIGHT": "resources/data/drivelm/nuscenes/samples/CAM_BACK_RIGHT/n008-2018-09-18-13-10-39-0400__CAM_BACK_RIGHT__1537291002278113.jpg"
+                }
+            }
+        }
+    },
+    "5726dbbea8044103be584a85e2f3ee64": {
+        "scene_description": "The ego vehicle is parked and waiting at the current traffic light intersection.",
+        "key_frames": {
+            "023688b95ff14266b6555ecb07c15377": {
+                "key_object_infos": {
+                    "<c1,CAM_FRONT,773.3,476.7>": {
+                        "Category": "Vehicle",
+                        "Status": "Moving",
+                        "Visual_description": "Yellow truck.",
+                        "2d_bbox": [
+                            616.6,
+                            415,
+                            948.2,
+                            538.4
+                        ]
+                    },
+                    "<c2,CAM_FRONT,178.3,500.0>": {
+                        "Category": "Vehicle",
+                        "Status": "Moving",
+                        "Visual_description": "Red SUV.",
+                        "2d_bbox": [
+                            28.3,
+                            450,
+                            345.7,
+                            550
+                        ]
+                    },
+                    "<c3,CAM_BACK,549.2,672.5>": {
+                        "Category": "Vehicle",
+                        "Status": "Stationary",
+                        "Visual_description": "Gray commercial vehicle.",
+                        "2d_bbox": [
+                            205,
+                            445,
+                            933.4,
+                            900
+                        ]
+                    },
+                    "<c4,CAM_FRONT_LEFT,792.5,471.1>": {
+                        "Category": "Vehicle",
+                        "Status": "Stationary",
+                        "Visual_description": "Black motorhome.",
+                        "2d_bbox": [
+                            0,
+                            0,
+                            1600,
+                            900
+                        ]
+                    },
+                    "<c5,CAM_FRONT_RIGHT,89.2,470.0>": {
+                        "Category": "Vehicle",
+                        "Status": "Moving",
+                        "Visual_description": "White SUV.",
+                        "2d_bbox": [
+                            0,
+                            393.3,
+                            320.8,
+                            546.7
+                        ]
+                    }
+                },
+                "QA": {
+                    "interesting": [
+                        {
+                            "Q": "Identify all the traffic elements in the front view, categorize them, determine their status, and predict the bounding box around each one. The output should be a list formatted as (c, s, x1, y1, x2, y2), where c represents the category, s denotes the status, and x1, y1, x2, y2 are the offsets of the top-left and bottom-right corners of the box relative to the center point.",
+                            "A": "There are many traffic elements in the front view. The information of these traffic elements is [(traffic light, red, 1065.83, 268.26, 1092.68, 332.59), (traffic light, unknown, 1034.47, 274.02, 1063.73, 334.83), (traffic light, red, 1076.34, 338.46, 1105.55, 366.08), (traffic light, red, 858.73, 304.72, 877.74, 353.34), (traffic light, red, 48.71, 392.89, 75.87, 420.65), (traffic light, unknown, 860.26, 364.13, 880.43, 382.67), (traffic light, red, 373.03, 352.22, 389.54, 393.34)].",
+                            "C": null,
+                            "con_up": null,
+                            "con_down": null,
+                            "cluster": null,
+                            "layer": null,
+                            "generated_answer": "The image does not contain any traffic elements in the front view. Therefore, there are no bounding boxes to provide."
+                        }
+                    ]
+                },
+                "image_paths": {
+                    "CAM_FRONT": "resources/data/drivelm/nuscenes/samples/CAM_FRONT/n008-2018-08-30-15-16-55-0400__CAM_FRONT__1535657153612404.jpg",
+                    "CAM_FRONT_LEFT": "resources/data/drivelm/nuscenes/samples/CAM_FRONT_LEFT/n008-2018-08-30-15-16-55-0400__CAM_FRONT_LEFT__1535657153604799.jpg",
+                    "CAM_FRONT_RIGHT": "resources/data/drivelm/nuscenes/samples/CAM_FRONT_RIGHT/n008-2018-08-30-15-16-55-0400__CAM_FRONT_RIGHT__1535657153620482.jpg",
+                    "CAM_BACK": "resources/data/drivelm/nuscenes/samples/CAM_BACK/n008-2018-08-30-15-16-55-0400__CAM_BACK__1535657153637558.jpg",
+                    "CAM_BACK_LEFT": "resources/data/drivelm/nuscenes/samples/CAM_BACK_LEFT/n008-2018-08-30-15-16-55-0400__CAM_BACK_LEFT__1535657153647405.jpg",
+                    "CAM_BACK_RIGHT": "resources/data/drivelm/nuscenes/samples/CAM_BACK_RIGHT/n008-2018-08-30-15-16-55-0400__CAM_BACK_RIGHT__1535657153628113.jpg"
+                }
+            }
+        }
+    }
+}
