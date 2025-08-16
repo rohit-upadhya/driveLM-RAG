@@ -46,14 +46,13 @@ A Retrieval-Augmented Generation (RAG) pipeline that:
 ```
 resources/
   data/
-    drivelm/                          # DriveLM inputs (e.g., train_sample.json)
-    nuscenes-mini/v1.0-mini/          # NuScenes mini JSON + samples/... (images)
+    drivelm/
+    nuscenes-mini/v1.0-mini/
   output/
-    nusciences_processed.json         # Built by CreateNuscenesIndex (note spelling)
-    drive_lm_with_lm_outputs.json     # Built by LMRag
-    lm_analysis_qustion.json          # From DriveLMAnalysis
+    nuscenes_processed.json
+    drive_lm_with_lm_outputs.pkl/json
     per_scene_lm_analysis_qustion.json
-  prompt_template.yaml                # See example below
+  prompt_template.yaml 
 
 src/
   encoders/
@@ -62,10 +61,10 @@ src/
   inference/
     open_ai_inference.py              # OpenAICaller
     local_lm_inference.py             # LocalInference (Qwen2.5-VL)
-    inference.py                      # Inference router (ModelType -> caller)
+    inference.py                      # Inference router
   util/
     prompter.py                       # Prompter (builds chat messages)
-    load_file.py                      # FileLoader (JSON/YAML loader; referenced)
+    load_file.py                      # FileLoader
     data_types.py                     # ModelType, ErrorTypes
 preprocess/
     create_nuscenes_index.py          # CreateNuscenesIndex entrypoint
@@ -86,26 +85,24 @@ lm_rag.py                             # LMRag entrypoint (end-to-end RAG)
 - **NuScenes mini** dataset under `resources/data/nuscenes-mini/v1.0-mini/`.
 
 ### Python packages
+
+- **Poetry** : This repo uses Poetry for easy setup. Simply run `source setup.sh` from the root directory to setup environemt. Since this solution was run on Colab for the local Inference, additional packages might be required (GPU specific). Kindly take note of this before running.
+
+A good rule of thumb might be to add the following : 
+
 ```bash
-pip install --upgrade pip
 
-# Core
-pip install numpy pillow faiss-cpu matplotlib ipython python-dotenv pyyaml
+poetry add numpy pillow faiss-cpu matplotlib ipython python-dotenv pyyaml
 
-# PyTorch (choose wheel matching your CUDA)
-pip install torch --index-url https://download.pytorch.org/whl/cu121  # example
+poetry add torch --index-url https://download.pytorch.org/whl/cu121 
 
-# Transformers + CLIP
-pip install transformers
+poetry add transformers
 
-# OpenAI (Responses API)
-pip install "openai>=1.40.0"
+poetry add "openai>=1.40.0"
 
-# Qwen (local VLM) + quantization
-pip install qwen-vl-utils bitsandbytes
+poetry add qwen-vl-utils bitsandbytes
 ```
 
-> Optional: `pip install faiss-gpu` if you prefer FAISS on CUDA.
 
 ---
 
@@ -146,9 +143,6 @@ Schema (fragment):
   }
 }
 ```
-
-> `AnalyzeRag` expects additional fields like `retrieval` and `cosine`. The provided `LMRag` pipeline writes `generated_answer` but does not attach retrieval lists by default. See **Implementation Notes** if you plan to use `AnalyzeRag` directly.
-
 ---
 
 ## Prompt Template
@@ -206,7 +200,6 @@ from lm_rag import LMRag
 lm_rag = LMRag(local_inference=True)
 lm_rag.perform_rag()
 ```
-> Local path moves tensors to CUDA; ensure a GPU is available.
 
 ---
 
@@ -244,48 +237,11 @@ print(resp)
 
 ---
 
-## Analysis Utilities
-
-### NuScenes stats
-```python
-from analysis.analyze_nuscenes import AnalyzeNuscenes
-import json
-
-data = json.load(open("resources/output/nusciences_processed.json"))
-an = AnalyzeNuscenes(nuscenes_dataset=data)
-an.plot_speed("Speed Distribution")
-an.plot_object_distributions()
-```
-
-### DriveLM question distribution
-```python
-from analysis.drive_lm_analysis import DriveLMAnalysis
-import json
-
-train = json.load(open("resources/data/drivelm/train_sample.json"))
-dlm = DriveLMAnalysis(train_dict=train)
-all_q, per_scene_q = dlm.process_analysis()
-```
-
-### RAG inspection (requires retrieval info)
-```python
-from analysis.analyze_rag import AnalyzeRag
-import json
-
-rag = json.load(open("resources/output/drive_lm_with_lm_outputs.pkl"))
-ar = AnalyzeRag(rag_data=rag)
-ar.display_information()
-```
-
----
 
 ## Implementation Notes
 - **Cosine similarity** via FAISS IP over L2-normalized embeddings.
 - **EncodeImageText** accepts file paths or `PIL.Image.Image`. Text encoding truncates at CLIP max length.
 - **LocalInference** loads `Qwen/Qwen2.5-VL-7B-Instruct`; quantization optional via bitsandbytes.
-- **LMRag output**: attaches `generated_answer` per question. If you need to visualize retrievals later:
-  - extend `LMRag.perform_rag()` to also persist a serialization of retrieved frames (e.g., image paths + metadata) under each question,
-  - avoid storing `PIL.Image` objects directly (not JSON-serializable). Store relative image paths and/or base64 when needed.
 
 ---
 
@@ -294,9 +250,8 @@ ar.display_information()
 - **CUDA / OOM (local Qwen)**: ensure a CUDA-enabled GPU; try `load_in_8bit=True` or `load_in_4bit=True`.
 - **OpenAI errors**: rate limits/API errors surface as `ValueError`; verify `OPENAI_API_KEY` and model name.
 - **Path issues**: adjust constructor args or data locations if your structure differs.
-- **NuScenes path spelling**: the output file is named `nusciences_processed.json` in code (note the extra “s”). Keep consistent unless you change it in both code and README.
 
 ---
 
 ## License
-Add your license text here.
+MIT License.
