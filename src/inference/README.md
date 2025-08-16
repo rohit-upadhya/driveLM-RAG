@@ -33,6 +33,8 @@ For local inference we use **Qwen2.5-VL-7B-Instruct**.
 - **Language model:** decoder-only Transformer (Qwen2.5) that fuses text and visual tokens to generate answers
 - **Temporal & grounding:** supports multi-frame inputs, region grounding, and structured outputs where needed
 
+#### Read more on the official Hugging Face model page for Qwen2.5-VL-7B-Instruct  
+[Qwen2.5-VL-7B-Instruct (Hugging Face Model Page)](https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct)
 ---
 
 ## Router and I/O Contract (how this plugs in)
