@@ -58,11 +58,17 @@ class EncodeImageText:
         normalize: bool = True,
     ) -> np.ndarray:
         all_feats = []
+        max_len = self.processor.tokenizer.model_max_length
         for i in range(0, len(texts), batch_size):
             batch = texts[i : i + batch_size]
-            inputs = self.processor(text=batch, return_tensors="pt", padding=True).to(
-                self.device
-            )
+            inputs = self.processor(
+                text=batch,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=max_len,
+            ).to(self.device)
+
             feats = self.model.get_text_features(**inputs).float()
             if normalize:
                 feats = torch.nn.functional.normalize(feats, p=2, dim=1)
