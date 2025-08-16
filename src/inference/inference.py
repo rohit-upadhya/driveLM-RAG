@@ -16,7 +16,7 @@ class Inference:
     ):
         if self.model_type == ModelType.OPEN_AI:
             return OpenAICaller()
-        if self.model_type == ModelType.CLIP:
+        if self.model_type == ModelType.QWEN:
             return LocalInference()
 
     def inference(

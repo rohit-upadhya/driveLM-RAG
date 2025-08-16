@@ -8,3 +8,4 @@ class ErrorTypes(Enum):
 class ModelType(Enum):
     OPEN_AI = "open_ai"
     CLIP = "clip"
+    QWEN = "qwen"

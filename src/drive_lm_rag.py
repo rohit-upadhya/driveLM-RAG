@@ -37,7 +37,7 @@ class LMRag:
     ):
         model_type = ModelType.OPEN_AI
         if self.local_inference:
-            model_type = ModelType.CLIP
+            model_type = ModelType.QWEN
         self.inference_obj = Inference(model_type=model_type)
         pass
 
