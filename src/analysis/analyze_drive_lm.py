@@ -3,6 +3,8 @@ import re
 import json
 import random
 import matplotlib.pyplot as plt
+from html import escape
+from IPython.display import HTML, display
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
@@ -44,6 +46,28 @@ class DriveLMAnalysis:
                     print(f"No {item} type question in {k_scene}")
                     v_scene[item] = 0
         return all_question_count, per_scene_question_count
+
+    def display_question_answer(self, question, answer,):
+        question_safe = escape(question)
+        answer_safe = escape(answer)
+
+        html = f"""
+        <div style="font-family: Arial, sans-serif; line-height: 1.5; margin-bottom: 20px;">
+            <div style="font-size:18px; font-weight:bold; color:#007acc; margin-bottom:8px;">
+                Question:
+            </div>
+            <div style="font-size:16px; color:#1a1a1a; margin-bottom:15px; white-space: pre-wrap;">
+                {question_safe}
+            </div>
+            <div style="font-size:18px; font-weight:bold; color:#cc0000; margin-bottom:8px;">
+                Answer:
+            </div>
+            <div style="font-size:16px; color:#333333; white-space: pre-wrap;">
+                {answer_safe}
+            </div>
+        </div>
+        """
+        display(HTML(html))
 
     def _draw_label(
         self,
@@ -129,40 +153,24 @@ class DriveLMAnalysis:
 
         return cam_images
 
-    # def _detect_tag_in_string(
-    #     self,
-    #     query: str,
-    # ) -> tuple[bool, list[str]]:
-    #     pattern = r"<[^>]+>"
-    #     matches = re.findall(pattern, query)
-    #     parsed_tags = []
-    #     for tag in matches:
-    #         parsed = self._parse_object_tag(tag)
-    #         if parsed:
-    #             parsed_tags.append(parsed)
-    #     return (len(parsed_tags) > 0, parsed_tags)
-
-    # def _process_questions(
-    #     self,
-    #     qa: dict,
-    #     images: dict,
-    # ):
-    #     qa_with_tags = []
-    #     for question_type, questions in qa.items():
-    #         for item in questions:
-    #             tags_in_q = self._detect_tag_in_string(item["Q"])
-    #             tags_in_a = self._detect_tag_in_string(item["A"])
-    #             if tags_in_q[0]:
-    #                 for tag in tags_in_q:
-    #                 for item in images:
-    #                     if images["id"] ==
-    #             pass
+    def _detect_tag_in_string(
+        self,
+        query: str,
+    ) -> tuple[bool, list[str]]:
+        pattern = r"<[^>]+>"
+        matches = re.findall(pattern, query)
+        parsed_tags = []
+        for tag in matches:
+            parsed = self._parse_object_tag(tag)
+            if parsed:
+                parsed_tags.append(parsed)
+        return (len(parsed_tags) > 0, parsed_tags)
 
     def visualize_sample(
         self,
         scene_id: str | None = None,
         key_frame_id: str | None = None,
-    ) -> dict | None:
+    ) -> tuple[dict | None, dict | None]:
         if scene_id is None:
             scene_id = random.choice(list(self.train_dict.keys()))
         scene_ = self.train_dict.get(scene_id, {})
@@ -170,7 +178,7 @@ class DriveLMAnalysis:
 
         if not key_frames:
             print(f"No key_frames for scene {scene_id}")
-            return
+            return None, None
 
         if key_frame_id is None or key_frame_id not in key_frames:
             key_frame_id = random.choice(list(key_frames.keys()))
@@ -181,7 +189,7 @@ class DriveLMAnalysis:
         qa = kf.get("QA", {})
         cam_images = self._collect_boxes_by_camera(key_object_infos, image_paths)
 
-        return cam_images
+        return cam_images, qa
 
     def _parse_object_tag(
         self,
