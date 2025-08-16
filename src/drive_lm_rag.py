@@ -11,6 +11,7 @@ from src.encoders.faiss import FaissDB
 from src.inference.inference import Inference
 from src.util.prompter import Prompter
 from src.util.load_file import FileLoader
+from src.util.data_types import ModelType
 
 
 class LMRag:
@@ -19,6 +20,7 @@ class LMRag:
         drive_lm_data_file: str = "resources/data/drivelm/train_sample.json",
         nuscenes_file: str = "resources/output/nusciences_processed.json",
         prompt_template_file: str = "resources/prompt_template.yaml",
+        local_inference: bool = False,
     ) -> None:
         self.file_loader = FileLoader()
         self.drive_lm_data = self.file_loader.load_file(drive_lm_data_file)
@@ -27,14 +29,24 @@ class LMRag:
         self.encoder = EncodeImageText()
         self.faiss = FaissDB()
         self.prompt_template_file = prompt_template_file
+        self.local_inference = local_inference
+        self._load_inference()
+
+    def _load_inference(
+        self,
+    ):
+        model_type = ModelType.OPEN_AI
+        if self.local_inference:
+            model_type = ModelType.CLIP
+        self.inference_obj = Inference(model_type=model_type)
+        pass
 
     def _inference(
         self,
         message: list[dict],
     ):
-        inference_obj = Inference(input_prompt=message)
-        inference = inference_obj.inference()
-        return inference
+        inference = self.inference_obj.inference(input_prompt=message)
+        return inference[0] if isinstance(inference, list) else inference
 
     def _build_index(
         self,
@@ -77,7 +89,11 @@ class LMRag:
         prompt_template = self.file_loader.load_file(self.prompt_template_file).get(
             "rag", {}
         )
-        prompter = Prompter(prompt_template=prompt_template, query_items=query_items)
+        prompter = Prompter(
+            prompt_template=prompt_template,
+            query_items=query_items,
+            local_inference=self.local_inference,
+        )
         return prompter.build_chat_prompt()
 
     def _save_json_files(
@@ -99,7 +115,7 @@ class LMRag:
         query: str,
     ):
         encoded_query = self.encoder.encode_text(texts=[query])
-        return np.squeeze(encoded_query, axis=0)
+        return encoded_query
 
     def _process_image(
         self,
@@ -119,6 +135,7 @@ class LMRag:
         query,
     ) -> list:
         encoded_query = self._encode_query(query=query)
+        print(encoded_query.shape)
         relevant_ids = self.faiss.perform_search(query=encoded_query)
         relevant_samples = []
         for id in relevant_ids:
@@ -134,6 +151,7 @@ class LMRag:
         images: list,
     ):
         image_encodings = self.encoder.encode_image(images=images)
+        print("encoded all images.")
         return image_encodings
 
     def perform_rag(
@@ -152,15 +170,23 @@ class LMRag:
             scene_description = v_1["scene_description"]
             relevant_samples = self._retreival(query=scene_description)
             key_frames = v_1["key_frames"]
-            for k_2, v_2 in key_frames:
+            for k_2, v_2 in key_frames.items():
                 qa = v_2["QA"]
                 for type, questions in qa.items():
-                    for item in questions:
+                    for qi, q in enumerate(questions):
+                        query_text = q.get("Q") if isinstance(q, dict) else str(q)
                         prompt = self._build_prompt(
-                            query=item, images_dict=relevant_samples
+                            query=query_text, images_dict=relevant_samples
                         )
                         lm_answer = self._inference(message=prompt)
-                        item["generated_answer"] = lm_answer
+                        print(lm_answer)
+                        if isinstance(q, dict):
+                            questions[qi]["generated_answer"] = lm_answer
+                        else:
+                            questions[qi] = {
+                                "Q": query_text,
+                                "generated_answer": lm_answer,
+                            }
         self._save_json_files(
             data=self.drive_lm_data,
             file_name="resources/output/drive_lm_with_lm_outputs.json",
